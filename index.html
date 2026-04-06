@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Academic Writing Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            /* Modern Palette */
+            --primary: #2563eb;       /* Royal Blue */
+            --primary-dark: #1e40af;
+            --secondary: #1e293b;     /* Slate Dark */
+            --bg-body: #f1f5f9;       /* Slate Light */
+            --bg-card: #ffffff;
+            --accent: #10b981;        /* Emerald */
+            --warning: #f59e0b;       /* Amber */
+            --danger: #ef4444;        /* Red */
+            --text-main: #334155;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            line-height: 1.6;
+        }
+
+        /* --- Layout --- */
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 85vh;
+            position: relative;
+        }
+
+        /* --- Header --- */
+        .app-header {
+            padding: 20px 30px;
+            background: linear-gradient(135deg, var(--secondary) 0%, #334155 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .app-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* --- Navigation Tabs --- */
+        .tabs {
+            display: flex;
+            background-color: white;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab-btn {
+            padding: 18px 25px;
+            border: none;
+            background: none;
+            color: var(--text-light);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover { color: var(--primary); }
+        
+        .tab-btn.active {
+            color: var(--primary);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* --- Main Content Area --- */
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Controls Toolbar --- */
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background-color: white;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            flex-grow: 1;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select:focus { border-color: var(--primary); }
+
+        .timer {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--secondary);
+            background: white;
+            padding: 5px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            min-width: 100px;
+            text-align: center;
+        }
+        .timer.warning { color: var(--danger); border-color: var(--danger); animation: pulse 1s infinite; }
+
+        /* --- Buttons --- */
+        button { cursor: pointer; transition: all 0.2s; font-family: inherit; }
+        
+        .action-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex; align-items: center; gap: 8px;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+        .action-btn:hover { background-color: var(--primary-dark); transform: translateY(-1px); }
+        .action-btn:active { transform: translateY(0); }
+        
+        .action-btn.finish { background-color: var(--warning); box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2); }
+        .action-btn.finish:hover { background-color: #d97706; }
+        
+        .action-btn:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .reset-btn {
+            background: transparent;
+            color: var(--text-light);
+            border: 1px solid var(--border);
+            padding: 9px 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .reset-btn:hover { background: #f1f5f9; color: var(--danger); border-color: var(--danger); }
+
+        /* --- Editor Area --- */
+        .prompt-image-container {
+            text-align: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: #fff;
+            display: none;
+            box-shadow: var(--shadow);
+        }
+        .prompt-image-container img { max-width: 100%; max-height: 400px; height: auto; border-radius: 4px; }
+
+        .prompt-text-display {
+            padding: 20px;
+            background-color: #eff6ff;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+            border-radius: 4px;
+            color: var(--secondary);
+            font-style: italic;
+            display: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 450px;
+            box-sizing: border-box;
+            padding: 25px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            resize: vertical;
+            color: #1e293b;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+        textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        textarea:disabled { background-color: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+
+        /* --- Footer Stats --- */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 0 5px;
+            color: var(--text-light);
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .feedback-btn {
+            background-color: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        }
+        .feedback-btn:hover { background-color: #059669; }
+
+        /* --- Result Area --- */
+        .result-area {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            padding: 30px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius);
+        }
+        .result-area h3 { color: #166534; margin-top: 0; }
+
+        /* --- STUDY HUB STYLES --- */
+        .study-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .study-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .study-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+
+        .card-header {
+            background: var(--bg-body);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        .card-header i { color: var(--primary); }
+
+        .card-body { padding: 20px; }
+        
+        .vocab-group { margin-bottom: 15px; }
+        .vocab-title { font-size: 0.85rem; text-transform: uppercase; color: var(--text-light); font-weight: 700; margin-bottom: 8px; display: block; }
+        .vocab-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip {
+            background: #eff6ff;
+            color: var(--primary-dark);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            border: 1px solid #dbeafe;
+        }
+
+        .tip-list { list-style: none; padding: 0; margin: 0; }
+        .tip-list li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+        .tip-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        /* --- Overlay (Start Screen) --- */
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        #start-overlay h1 { font-size: 2.5rem; margin-bottom: 10px; color: white; }
+        .fs-btn {
+            background: white;
+            color: var(--secondary);
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(255,255,255,0.2);
+            transition: transform 0.2s;
+        }
+        .fs-btn:hover { transform: scale(1.05); }
+        .fs-btn.secondary { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: white; box-shadow: none; }
+        .fs-btn.secondary:hover { border-color: white; }
+
+        /* --- Feedback Modal --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 10000;
+            justify-content: center; align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background: white; width: 90%; max-width: 800px;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            max-height: 90vh; overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .modal-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky; top: 0;
+        }
+        .modal-body { padding: 30px; }
+        .modal-close { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        /* Report Card Elements */
+        .score-summary { display: flex; gap: 30px; margin-bottom: 30px; align-items: center; background: #f8fafc; padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .main-score {
+            width: 110px; height: 110px;
+            background: var(--primary); color: white;
+            border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+        }
+        .main-score span { font-size: 3rem; font-weight: 800; line-height: 1; }
+        .analysis-section { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .section-header { background: #f1f5f9; padding: 12px 20px; font-weight: 700; color: var(--secondary); display: flex; justify-content: space-between; align-items: center; }
+        .section-content { padding: 20px; background: white; font-size: 0.95rem; }
+        
+        .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .tag.good { background: #dcfce7; color: #166534; }
+        .tag.warn { background: #fef3c7; color: #92400e; }
+        .tag.bad { background: #fee2e2; color: #991b1b; }
+        
+        .suggestion-box { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px; margin-top: 10px; font-size: 0.9rem; color: #78350f; }
+
+        @media (max-width: 768px) {
+            .app-header { flex-direction: column; gap: 10px; text-align: center; }
+            .tabs { flex-wrap: wrap; }
+            .tab-btn { flex: 1; justify-content: center; font-size: 0.9rem; }
+            .controls { flex-direction: column; align-items: stretch; }
+            select { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Start Overlay -->
+<div id="start-overlay">
+    <div style="font-size: 4rem; margin-bottom: 20px; color: var(--accent);"><i class="fas fa-pen-nib"></i></div>
+    <h1>IELTS Writing Simulator</h1>
+    <p style="max-width: 500px; margin-bottom: 30px; font-size: 1.1rem; color: #cbd5e1;">Master Academic Task 1 & 2 with real-time timers, diverse prompts, and instant automated analysis.</p>
+    <div>
+        <button class="fs-btn" onclick="enterFullScreen()">Enter Full Screen</button>
+        <button class="fs-btn secondary" onclick="startNormal()">Standard Mode</button>
+    </div>
+</div>
+
+<!-- Feedback Modal -->
+<div id="feedback-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0"><i class="fas fa-chart-line" style="margin-right:10px;"></i> Performance Analysis</h3>
+            <button class="modal-close" onclick="closeFeedback()">×</button>
+        </div>
+        <div class="modal-body" id="feedback-body"></div>
+    </div>
+</div>
+
+<!-- Main App Container -->
+<div class="container">
+    <div class="app-header">
+        <h1><i class="fas fa-graduation-cap"></i> IELTS Simulator</h1>
+        <div style="font-size: 0.9rem; opacity: 0.8;">Academic Module</div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('task1')"><i class="fas fa-chart-bar"></i> Task 1 (Report)</button>
+        <button class="tab-btn" onclick="openTab('task2')"><i class="fas fa-comments"></i> Task 2 (Essay)</button>
+        <button class="tab-btn" onclick="openTab('studyHub')"><i class="fas fa-book-open"></i> Study Hub</button>
+    </div>
+
+    <!-- TASK 1 TAB -->
+    <div id="task1" class="tab-content active">
+        <div class="controls">
+            <select id="t1-select" onchange="handlePromptSelection('t1', this.value)">
+                <option value="" disabled selected>Select Task 1 Visual...</option>
+                <option value="0">📊 Bar Chart: Future Forecast</option>
+                <option value="1">📈 Line Graph: Metal Prices</option>
+                <option value="2">🥧 Pie Charts: Energy Capacity</option>
+                <option value="3">🗺️ Map: City Development</option>
+                <option value="4">📉 Table: Demographics</option>
+            </select>
+            <div id="t1-timer" class="timer">20:00</div>
+            <div style="display: flex; gap: 8px;">
+                <button id="t1-btn" class="action-btn" onclick="initiateTimer('t1', 20)"><i class="fas fa-play"></i> Start</button>
+                <button id="t1-finish-btn" class="action-btn finish" onclick="finishTask('t1')" disabled><i class="fas fa-flag-checkered"></i> Finish</button>
+                <button class="reset-btn" onclick="resetTask('t1')" title="Reset All"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+        
+        <div id="t1-img-container" class="prompt-image-container">
+            <img id="t1-image" src="" alt="Prompt Image">
+            <div style="margin-top: 10px; font-size: 0.9rem; color: #666;">Summarize the information by selecting and reporting the main features.</div>
+        </div>
+        
+        <textarea id="t1-text" placeholder="Select a chart above, click Start, and begin typing your report here..." disabled></textarea>
+        
+        <div class="footer">
+            <span id="t1-status"><i class="fas fa-circle" style="font-size:0.6rem; margin-right:5px; color:#cbd5e1;"></i> Waiting</span>
+            <div><button class="feedback-btn" onclick="generateFeedback('t1')"><i class="fas fa-magic"></i> Analyze Text</button></div>
+            <span>Words: <strong id="t1-words" style="color:var(--secondary)">0</strong></span>
+        </div>
+        
+        <div id="t1-result" class="result-area">
+            <h3><i class="fas fa-check-circle"></i> Task Completed</h3>
+            <p>Great job practicing under timed conditions.</p>
+            <div style="margin-top: 20px;">
+                <button class="action-btn" style="background: var(--secondary);" onclick="takeScreenshot('t1')"><i class="fas fa-download"></i> Save Image</button>
+                <button class="action-btn" style="background: var(--accent);" onclick="generateFeedback('t1')"><i class="fas fa-list-alt"></i> View Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TASK 2 TAB -->
+    <div id="task2" class="tab-content">
+        <div class="controls">
+            <select id="t2-select" onchange="handlePromptSelection('t2', this.value)">
+                <option value="" disabled selected>Select Task 2 Topic...</option>
+                <option value="Topic 1">🎓 Education: Free University</option>
+                <option value="Topic 2">🌍 Environment: Fuel Pricing</option>
+                <option value="Topic 3">💻 Tech: Remote Work</option>
+                <option value="Topic 4">⚖️ Crime: Youth Causes</option>
+                <option value="Topic 5">🎨 Gov: Arts vs Public Services</option>
+            </select>
+            <div id="t2-timer" class="timer">40:00</div>
+            <div style="display: flex; gap: 8px;">
+                <button id="t2-btn" class="action-btn" onclick="initiateTimer('t2', 40)"><i class="fas fa-play"></i> Start</button>
+                <button id="t2-finish-btn" class="action-btn finish" onclick="finishTask('t2')" disabled><i class="fas fa-flag-checkered"></i> Finish</button>
+                <button class="reset-btn" onclick="resetTask('t2')" title="Reset All"><i class="fas fa-redo"></i></button>
+            </div>
+        </div>
+
+        <div id="t2-prompt-display" class="prompt-text-display"></div>
+        
+        <textarea id="t2-text" placeholder="Select a topic above, click Start, and begin writing your essay..." disabled></textarea>
+        
+        <div class="footer">
+            <span id="t2-status"><i class="fas fa-circle" style="font-size:0.6rem; margin-right:5px; color:#cbd5e1;"></i> Waiting</span>
+            <div><button class="feedback-btn" onclick="generateFeedback('t2')"><i class="fas fa-magic"></i> Analyze Text</button></div>
+            <span>Words: <strong id="t2-words" style="color:var(--secondary)">0</strong></span>
+        </div>
+        
+        <div id="t2-result" class="result-area">
+            <h3><i class="fas fa-check-circle"></i> Task Completed</h3>
+            <p>Essay finished! Review your analysis or save your work.</p>
+            <div style="margin-top: 20px;">
+                <button class="action-btn" style="background: var(--secondary);" onclick="takeScreenshot('t2')"><i class="fas fa-download"></i> Save Image</button>
+                <button class="action-btn" style="background: var(--accent);" onclick="generateFeedback('t2')"><i class="fas fa-list-alt"></i> View Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STUDY HUB TAB -->
+    <div id="studyHub" class="tab-content">
+        <div style="margin-bottom: 25px;">
+            <h2 style="color:var(--secondary); margin-bottom: 10px;">Study Resources</h2>
+            <p style="color:var(--text-light);">Essential vocabulary and strategies to boost your Band Score.</p>
+        </div>
+
+        <div class="study-grid">
+            <!-- Task 1 Vocab -->
+            <div class="study-card">
+                <div class="card-header"><i class="fas fa-chart-line"></i> Task 1 Vocabulary</div>
+                <div class="card-body">
+                    <div class="vocab-group">
+                        <span class="vocab-title">Upward Trends</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Surge</span>
+                            <span class="chip">Rocket</span>
+                            <span class="chip">Climb</span>
+                            <span class="chip">Escalate</span>
+                            <span class="chip">Soar</span>
+                        </div>
+                    </div>
+                    <div class="vocab-group">
+                        <span class="vocab-title">Downward Trends</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Plummet</span>
+                            <span class="chip">Plunge</span>
+                            <span class="chip">Deteriorate</span>
+                            <span class="chip">Dip</span>
+                        </div>
+                    </div>
+                    <div class="vocab-group">
+                        <span class="vocab-title">Adverbs of Degree</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Dramatically</span>
+                            <span class="chip">Marginally</span>
+                            <span class="chip">Steeply</span>
+                            <span class="chip">Negligibly</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task 2 Vocab -->
+            <div class="study-card">
+                <div class="card-header"><i class="fas fa-pen-fancy"></i> Task 2 Connectors</div>
+                <div class="card-body">
+                    <div class="vocab-group">
+                        <span class="vocab-title">Adding Ideas</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Furthermore</span>
+                            <span class="chip">Moreover</span>
+                            <span class="chip">In addition to this</span>
+                        </div>
+                    </div>
+                    <div class="vocab-group">
+                        <span class="vocab-title">Contrasting</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Conversely</span>
+                            <span class="chip">Nevertheless</span>
+                            <span class="chip">In stark contrast</span>
+                        </div>
+                    </div>
+                    <div class="vocab-group">
+                        <span class="vocab-title">Concluding</span>
+                        <div class="vocab-chips">
+                            <span class="chip">Consequently</span>
+                            <span class="chip">Ultimately</span>
+                            <span class="chip">Hence</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task 1 Tips -->
+            <div class="study-card">
+                <div class="card-header"><i class="fas fa-lightbulb"></i> Task 1 Tips</div>
+                <div class="card-body">
+                    <ul class="tip-list">
+                        <li><strong>Paraphrase the Introduction:</strong> Never copy the prompt word-for-word. Use synonyms.</li>
+                        <li><strong>The 'Overview' is King:</strong> You MUST include a general overview paragraph describing the main trends. No data in this part!</li>
+                        <li><strong>No Opinions:</strong> Never write "I think" or give reasons for the data unless shown in the chart.</li>
+                        <li><strong>Group Data:</strong> Don't list every number. Group similar trends together (e.g., "Both UK and USA saw an increase...").</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Task 2 Tips -->
+            <div class="study-card">
+                <div class="card-header"><i class="fas fa-brain"></i> Task 2 Tips</div>
+                <div class="card-body">
+                    <ul class="tip-list">
+                        <li><strong>Plan before you write:</strong> Spend 5 minutes brainstorming. A clear structure saves time later.</li>
+                        <li><strong>One Idea Per Paragraph:</strong> Start with a clear Topic Sentence, explain it, then give an example.</li>
+                        <li><strong>Clear Position:</strong> If asked for your opinion, state it clearly in the introduction and conclusion.</li>
+                        <li><strong>Time Management:</strong> Leave 3-5 minutes at the end to check for spelling and basic grammar errors.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BASIC CONFIG ---
+    const imageUrls = [
+        <img src="https://github.com/khr824/wp/blob/f4fbae73ee6118905ce46eb9060beada2a16a45e/image%201.png" width="400",
+        "https://github.com/khr824/wp/blob/f4fbae73ee6118905ce46eb9060beada2a16a45e/image%202.png?raw=true",
+        "https://github.com/khr824/wp/blob/f4fbae73ee6118905ce46eb9060beada2a16a45e/image%203.png?raw=true",
+        "https://github.com/khr824/wp/blob/f4fbae73ee6118905ce46eb9060beada2a16a45e/image%204.png?raw=true",
+        "https://github.com/khr824/wp/blob/f4fbae73ee6118905ce46eb9060beada2a16a45e/image%205.png?raw=true"
+    ];
+    
+    const task2Prompts = {
+        "Topic 1": "Some people believe that university education should be free for everyone. Discuss both views and give your opinion.",
+        "Topic 2": "The best way to solve the world's environmental problems is to increase the price of fuel. To what extent do you agree or disagree?",
+        "Topic 3": "Nowadays, many people work from home using modern technology. Discuss the advantages and disadvantages of this trend.",
+        "Topic 4": "In many countries, the amount of crime committed by teenagers is increasing. What do you think are the causes of this? What solutions can you suggest?",
+        "Topic 5": "Government investment in the arts, such as music and theatre, is a waste of money. Governments should invest this money in public services instead. To what extent do you agree?"
+    };
+
+    let intervals = {};
+
+    window.onload = function() { restoreSession('t1'); restoreSession('t2'); };
+
+    // --- VIEW CONTROLS ---
+    function startNormal() { document.getElementById('start-overlay').style.display = 'none'; }
+    function enterFullScreen() {
+        document.getElementById('start-overlay').style.display = 'none';
+        const el = document.documentElement;
+        if(el.requestFullscreen) el.requestFullscreen();
+    }
+    
+    function openTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        
+        // Map tab IDs to button indices for active state
+        let btnIndex = 0;
+        if(id === 'task2') btnIndex = 1;
+        if(id === 'studyHub') btnIndex = 2;
+        
+        document.querySelectorAll('.tab-btn')[btnIndex].classList.add('active');
+    }
+
+    // --- TIMER & LOGIC ---
+    function handlePromptSelection(id, val) {
+        localStorage.setItem(id+'_selection', val);
+        if(id === 't1') {
+            document.getElementById('t1-image').src = imageUrls[val];
+            document.getElementById('t1-img-container').style.display = 'block';
+        } else {
+            const disp = document.getElementById('t2-prompt-display');
+            disp.textContent = task2Prompts[val];
+            disp.style.display = 'block';
+        }
+    }
+
+    function initiateTimer(id, mins) {
+        if(!document.getElementById(id+'-select').value) return alert('Please select a topic/prompt first.');
+        const end = Date.now() + (mins*60*1000);
+        localStorage.setItem(id+'_endTime', end);
+        lockUI(id);
+        runTimer(id, end);
+    }
+
+    function runTimer(id, end) {
+        const disp = document.getElementById(id+'-timer');
+        if(intervals[id]) clearInterval(intervals[id]);
+        intervals[id] = setInterval(() => {
+            const rem = Math.ceil((end - Date.now())/1000);
+            if(rem <= 0) { disp.textContent="00:00"; endTask(id); }
+            else {
+                let m = Math.floor(rem/60), s = rem%60;
+                disp.textContent = (m<10?"0"+m:m) + ":" + (s<10?"0"+s:s);
+                if(rem < 60) disp.classList.add('warning');
+            }
+        }, 1000);
+    }
+
+    function lockUI(id) {
+        document.getElementById(id+'-select').disabled = true;
+        document.getElementById(id+'-btn').disabled = true;
+        document.getElementById(id+'-finish-btn').disabled = false;
+        document.getElementById(id+'-text').disabled = false;
+        document.getElementById(id+'-text').focus();
+        document.getElementById(id+'-status').innerHTML = '<i class="fas fa-pen" style="color:var(--primary); margin-right:5px;"></i> Writing In Progress...';
+    }
+
+    function finishTask(id) {
+        if(confirm("Are you sure? This stops the timer.")) endTask(id);
+    }
+
+    function endTask(id) {
+        clearInterval(intervals[id]);
+        localStorage.removeItem(id+'_endTime');
+        document.getElementById(id+'-timer').textContent = "00:00";
+        document.getElementById(id+'-text').disabled = true;
+        document.getElementById(id+'-finish-btn').disabled = true;
+        document.getElementById(id+'-status').textContent = "Status: Finished";
+        document.getElementById(id+'-result').style.display = 'block';
+    }
+
+    function resetTask(id) {
+        if(confirm("Delete text and reset timer?")) {
+            clearInterval(intervals[id]);
+            localStorage.removeItem(id+'_text');
+            localStorage.removeItem(id+'_endTime');
+            localStorage.removeItem(id+'_selection');
+            location.reload();
+        }
+    }
+
+    function restoreSession(id) {
+        const sel = localStorage.getItem(id+'_selection');
+        if(sel) { document.getElementById(id+'-select').value = sel; handlePromptSelection(id, sel); }
+        const txt = localStorage.getItem(id+'_text');
+        if(txt) { document.getElementById(id+'-text').value = txt; updateWordCount(id); }
+        const end = localStorage.getItem(id+'_endTime');
+        if(end) {
+            const rem = parseInt(end) - Date.now();
+            if(rem > 0) { lockUI(id); runTimer(id, parseInt(end)); }
+            else { lockUI(id); endTask(id); }
+        }
+    }
+
+    // --- WORD COUNT ---
+    ['t1','t2'].forEach(id => {
+        document.getElementById(id+'-text').addEventListener('input', function() {
+            localStorage.setItem(id+'_text', this.value);
+            updateWordCount(id);
+        });
+    });
+
+    function updateWordCount(id) {
+        const c = document.getElementById(id+'-text').value.trim().split(/\s+/).filter(w=>w.length>0).length;
+        document.getElementById(id+'-words').textContent = c;
+        return c;
+    }
+
+    // ==========================================
+    // === EXTENDED ANALYSIS ENGINE (Simulated AI) ===
+    // ==========================================
+
+    const dictionaries = {
+        transitions: {
+            contrast: ['however', 'although', 'nevertheless', 'despite', 'whereas', 'conversely', 'on the other hand', 'in contrast', 'while', 'but'],
+            addition: ['furthermore', 'moreover', 'in addition', 'additionally', 'besides', 'also', 'not only'],
+            result: ['therefore', 'consequently', 'thus', 'hence', 'as a result', 'so'],
+            example: ['for example', 'for instance', 'specifically', 'to illustrate', 'such as']
+        },
+        academic: [
+            'significant', 'substantial', 'fluctuation', 'illustrate', 'demonstrate', 'approximately',
+            'proportion', 'percentage', 'trajectory', 'subsequent', 'respective', 'correlation',
+            'predominant', 'account for', 'comprise', 'constitute', 'reveal', 'indicate', 'surge', 'plummet',
+            'considerable', 'dramatic', 'steady', 'gradual', 'peak', 'plateau'
+        ],
+        basic: ['good', 'bad', 'big', 'small', 'happy', 'sad', 'thing', 'stuff', 'lot', 'very', 'nice', 'get', 'got'],
+        complex_structure: ['which', 'that', 'who', 'whose', 'where', 'when', 'if', 'unless', 'since', 'while', 'although', 'despite']
+    };
+
+    function generateFeedback(taskId) {
+        const text = document.getElementById(taskId + '-text').value;
+        const wordCount = updateWordCount(taskId);
+        
+        if (wordCount < 15) { alert("Please write at least 15 words to generate an analysis."); return; }
+
+        const isTask1 = taskId === 't1';
+        const minWords = isTask1 ? 150 : 250;
+        
+        // --- 1. PRE-PROCESSING ---
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+        const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+        
+        // --- 2. VOCABULARY MINING ---
+        let detectedAcademic = new Set();
+        let detectedBasic = new Set();
+        let detectedConnectors = { contrast:0, addition:0, result:0, example:0 };
+        
+        words.forEach(w => {
+            if(dictionaries.academic.includes(w)) detectedAcademic.add(w);
+            if(dictionaries.basic.includes(w)) detectedBasic.add(w);
+            
+            for(let key in dictionaries.transitions) {
+                if(dictionaries.transitions[key].includes(w)) detectedConnectors[key]++;
+            }
+        });
+
+        // Repetition check (top 3 non-common words)
+        const frequency = {};
+        const stopWords = ['the','and','to','of','a','in','is','it','for','with','on','that','are','was','were','this','as'];
+        words.forEach(w => {
+            if(!stopWords.includes(w) && w.length > 3) frequency[w] = (frequency[w] || 0) + 1;
+        });
+        const repeatedWords = Object.entries(frequency)
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 3)
+            .filter(item => item[1] > 4); 
+
+        // --- 3. GRAMMAR CHECK ---
+        let complexSentences = 0;
+        let veryLongSentences = 0;
+        sentences.forEach(s => {
+            const sWords = s.split(/\s+/).length;
+            if(sWords > 35) veryLongSentences++;
+            const sLower = s.toLowerCase();
+            if(dictionaries.complex_structure.some(c => sLower.includes(" " + c + " "))) complexSentences++;
+        });
+
+        // --- 4. SCORING & HTML GENERATION ---
+        let score = 6.0;
+        let taHTML = '', ccHTML = '', lrHTML = '', graHTML = '';
+
+        // >> TASK ACHIEVEMENT <<
+        let taStatus = "good";
+        if(wordCount < minWords) { 
+            score -= 1.0; taStatus = "bad";
+            taHTML = `<div class="tag bad"><i class="fas fa-exclamation-triangle"></i> Under Length</div> Your text is <b>${wordCount}</b> words. The minimum is ${minWords}. This is a major penalty.`;
+        } else if (wordCount > minWords + 200) {
+            score -= 0.5; taStatus = "warn";
+            taHTML = `<div class="tag warn">Too Long</div> At ${wordCount} words, you risk running out of time. Aim for ${minWords + 50}.`;
+        } else {
+            score += 0.5;
+            taHTML = `<div class="tag good"><i class="fas fa-check"></i> Perfect Length</div> ${wordCount} words is within the ideal range.`;
+        }
+
+        // >> COHERENCE & COHESION <<
+        let pStatus = "good";
+        if(paragraphs.length < 3 || paragraphs.length > 6) {
+            score -= 0.5; pStatus = "warn";
+            ccHTML += `<div style="margin-bottom:10px;"><span class="tag warn">Paragraphs: ${paragraphs.length}</span> A standard response needs 4-5 clearly separated paragraphs.</div>`;
+        } else {
+            score += 0.5;
+            ccHTML += `<div style="margin-bottom:10px;"><span class="tag good">Structure</span> You used ${paragraphs.length} paragraphs, which is standard.</div>`;
+        }
+        
+        const totalLinks = Object.values(detectedConnectors).reduce((a,b)=>a+b,0);
+        if(totalLinks < 4) {
+            ccHTML += `<div class="suggestion-box"><b><i class="fas fa-link"></i> Cohesion Tip:</b> Your text lacks linking words. Try adding: <em>However, Furthermore, Therefore</em> to guide the reader.</div>`;
+        } else {
+            ccHTML += `<div style="font-size:0.9rem; color:#64748b;"><b>Connectors found:</b> ${totalLinks} (Contrast: ${detectedConnectors.contrast}, Result: ${detectedConnectors.result}, Addition: ${detectedConnectors.addition})</div>`;
+        }
+
+        // >> LEXICAL RESOURCE <<
+        if(detectedAcademic.size > 5) score += 0.5;
+        if(detectedBasic.size > 3) score -= 0.5;
+        
+        lrHTML += `<div style="margin-bottom:10px;"><b><i class="fas fa-book"></i> Academic Vocabulary:</b> <span style="color:#2563eb;">${detectedAcademic.size > 0 ? Array.from(detectedAcademic).join(', ') : "None detected."}</span></div>`;
+        if(detectedBasic.size > 0) {
+            lrHTML += `<div class="suggestion-box">Avoid basic words: <em>${Array.from(detectedBasic).join(', ')}</em>. Use more precise synonyms (e.g., 'significant' instead of 'big').</div>`;
+        }
+        if(repeatedWords.length > 0) {
+            lrHTML += `<div class="suggestion-box"><b>Repetition Alert:</b> You used '${repeatedWords[0][0]}' ${repeatedWords[0][1]} times. Find a synonym.</div>`;
+        }
+
+        // >> GRAMMAR RANGE <<
+        const complexRatio = (complexSentences / (sentences.length || 1)) * 100;
+        if(complexRatio > 30) score += 0.5;
+        else score -= 0.5;
+
+        graHTML += `<div><b>Sentence Variety:</b> ${Math.round(complexRatio)}% of your sentences contain complex structures (subordinate clauses).</div>`;
+        if(veryLongSentences > 2) {
+            graHTML += `<div class="suggestion-box" style="border-color:#ef4444; background:#fef2f2; color:#991b1b;"><b>Readability:</b> You have ${veryLongSentences} sentences over 35 words. These may be hard to read. Break them down.</div>`;
+        }
+
+        // Final Score Calc
+        score = Math.max(3.0, Math.min(9.0, score));
+        score = (Math.round(score * 2) / 2).toFixed(1);
+
+        // --- RENDER MODAL ---
+        const modal = document.getElementById('feedback-body');
+        modal.innerHTML = `
+            <div class="score-summary">
+                <div class="main-score"><span>${score}</span><small>Est. Band</small></div>
+                <div>
+                    <h4 style="margin:0 0 10px 0; color:var(--secondary);">Analysis Report</h4>
+                    <p style="margin:0; font-size:0.9rem; color:var(--text-light);">This score is an estimate based on length, vocabulary complexity, and sentence structure. Real examiners also judge logic and relevance.</p>
+                </div>
+            </div>
+
+            <div class="analysis-section">
+                <div class="section-header">Task Achievement <span class="tag ${taStatus}">${wordCount}/${minWords} words</span></div>
+                <div class="section-content">${taHTML}</div>
+            </div>
+
+            <div class="analysis-section">
+                <div class="section-header">Coherence & Cohesion <span class="tag ${pStatus}">${paragraphs.length} Paragraphs</span></div>
+                <div class="section-content">${ccHTML}</div>
+            </div>
+
+            <div class="analysis-section">
+                <div class="section-header">Lexical Resource (Vocabulary)</div>
+                <div class="section-content">${lrHTML}</div>
+            </div>
+
+            <div class="analysis-section">
+                <div class="section-header">Grammatical Range & Accuracy</div>
+                <div class="section-content">${graHTML}</div>
+            </div>
+        `;
+        document.getElementById('feedback-modal').style.display = 'flex';
+    }
+
+    function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+    window.onclick = function(e) { if(e.target == document.getElementById('feedback-modal')) closeFeedback(); }
+
+    // --- SCREENSHOT ---
+    function takeScreenshot(taskId) {
+        const text = document.getElementById(taskId + '-text').value;
+        const promptText = taskId === 't2' ? document.getElementById('t2-prompt-display').textContent : "Task 1 Visual Prompt";
+        
+        const div = document.createElement('div');
+        div.style.cssText = "width:800px; padding:40px; background:white; color:black; position:absolute; top:-9999px; font-family:Arial;";
+        div.innerHTML = `
+            <h2 style="border-bottom:3px solid #2563eb; padding-bottom:10px; color:#1e293b;">IELTS Submission</h2>
+            <p><strong>Task:</strong> ${taskId.toUpperCase()}</p>
+            <div style="background:#f1f5f9; padding:20px; border-left:5px solid #2563eb; margin-bottom:30px; border-radius:4px;">
+                <strong>Prompt:</strong><br>${promptText}
+            </div>
+            <div style="font-family:'Times New Roman'; font-size:1.2rem; line-height:1.6; white-space:pre-wrap;">${text}</div>
+            <div style="margin-top:40px; color:#64748b; font-size:0.8rem; border-top:1px solid #e2e8f0; padding-top:10px;">Generated by IELTS Writing Simulator</div>
+        `;
+        document.body.appendChild(div);
+        html2canvas(div).then(canvas => {
+            document.body.removeChild(div);
+            const a = document.createElement('a');
+            a.download = `IELTS_${taskId}_${Date.now()}.png`;
+            a.href = canvas.toDataURL();
+            a.click();
+        });
+    }
+</script>
+</body>
+</html>
